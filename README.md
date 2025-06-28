@@ -9,7 +9,6 @@ This repository provides a **teleoperation system using Dynamixel motors**, buil
 
 > ⚠️ This system has been verified only with Dynamixel **X-series** motors. Y/P-series are untested.
 
----
 
 ## 🖧 System Overview
 
@@ -31,7 +30,7 @@ PC ⇄ U2D2 ⇄ Leader Arm
   <img src="assets/system_overview.png" width="60%">
 </p>
 
----
+
 
 ## 🔧 Hardware Setup
 
@@ -99,7 +98,6 @@ sudo udevadm trigger
 ls /dev/ttyDXL_*
 ```
 
----
 
 ## 💻 Software Installation
 
@@ -121,8 +119,6 @@ git clone https://github.com/ogata-lab/dynamixel_teleop.git
 cd ~/catkin_ws
 catkin build
 ```
-
----
 
 ## 🚀 Execution (Teleoperation)
 
@@ -187,8 +183,6 @@ Likewise, you can change the leader's frequency as well:
 roslaunch follower_controller follower_bringup.launch leader_freq:=5
 ```
 
-
----
 
 ## 💡 Application: Online Motion Generation
 
