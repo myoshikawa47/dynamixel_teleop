@@ -94,7 +94,12 @@ class Interpolator:
                 self.has_valid_target = False
                 idx = np.argmax(np.abs(self.cmd - target))
                 if not "joint9" in msg.name[idx]:
-                    rospy.logerr_throttle(1.0, "OnlineExecutor.targetCallback(): Jump in cmd[{:d}]={:f} to target[{:d}]={:f} > {:f}".format(idx, self.cmd[idx], idx, target[idx], self.max_target_jump))
+                    rospy.logerr_throttle(
+                        1.0,
+                        "OnlineExecutor.targetCallback(): Jump in cmd[{:d}]={:f} to target[{:d}]={:f} > {:f}".format(
+                            idx, self.cmd[idx], idx, target[idx], self.max_target_jump
+                        ),
+                    )
                     return
         else:
             # initialization
@@ -115,13 +120,18 @@ def main(follower_freq, leader_freq):
     executor.run()
 
 
-
 if __name__ == "__main__":
     try:
         rospy.init_node("interpolator_node", anonymous=True)
-        follower_param = rospy.get_param("/follower")
+
+        # デフォルト値を用意（必要に応じて変更してください）
+        default_follower_param = {"control_freq": 100.0}
+        default_leader_param = {"control_freq": 10.0}
+
+        follower_param = rospy.get_param("/follower", default_follower_param)
         follower_freq = follower_param["control_freq"]
-        leader_param = rospy.get_param("/leader")
+
+        leader_param = rospy.get_param("/leader", default_leader_param)
         leader_freq = leader_param["control_freq"]
 
         main(follower_freq, leader_freq)

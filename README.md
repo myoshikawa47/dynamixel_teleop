@@ -1,183 +1,217 @@
-# Dynamixel Teleop system
+# 🦾 Dynamixel Teleoperation System
 
-## Quick start guide
-### Requirements
- - Ubuntu 20.04 + ROS 1 noetic
+This repository provides a **teleoperation system using Dynamixel motors**, built with Python and ROS. Key features include:
 
+- High-speed communication using `GroupSyncRead` / `GroupSyncWrite`
+- Immediate compatibility with OpenManipulator (only motor ID and baudrate setup required)
+- Smooth tracking with linear interpolation
+- Flexible configuration via YAML files for motor setup and control modes
+
+---
+
+## 🖧 System Overview
+
+### 🔗 Connection Architecture
+```
+PC ⇄ U2D2 ⇄ Leader Arm
+   ⇄ U2D2 ⇄ Follower Arm
+```
+
+### 📡 ROS Topics
+
+| Node Name         | Subscribed Topics          | Published Topics               |
+|-------------------|----------------------------|--------------------------------|
+| `leader_node`     | -                          | `/leader/joint_state`          |
+| `interpolation_node` | `/leader/joint_state`     | `/leader/online_joint_state`   |
+| `follower_node`   | `/leader/online_joint_state` | `/follower/joint_state`        |
+
+<p align="center">
+  <img src="assets/system_overview.png" width="60%">
+</p>
+
+---
+
+## 🔧 Hardware Setup
+
+### 🧰 Driver & Permissions
+
+```bash
+# Install Dynamixel Wizard
+cd ~/Downloads/
+wget -O DynamixelWizard2Setup_x64 "https://www.dropbox.com/s/csawv9qzl8m8e0d/DynamixelWizard2Setup-x86_64?dl=1"
+chmod +x DynamixelWizard2Setup_x64
+./DynamixelWizard2Setup_x64
+
+# Grant USB access permissions
+sudo usermod -aG dialout "$USER"
+
+# udev rule setup
+wget https://raw.githubusercontent.com/ROBOTIS-GIT/dynamixel-workbench/master/99-dynamixel-workbench-cdc.rules
+sudo mv 99-dynamixel-workbench-cdc.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+### 🔢 Motor ID Assignment
+
+- Communication speed: **4 Mbps (common for all motors)**
+
+| Joint         | Leader ID | Follower ID |
+|---------------|-----------|-------------|
+| arm/joint1    | 11        | 21          |
+| arm/joint2    | 12        | 22          |
+| arm/joint3    | 13        | 23          |
+| arm/joint4    | 14        | 24          |
+| arm/joint5    | 15        | 25          |
+
+### 🔌 Fixed Device Names via udev
+Linux assigns USB device names like /dev/ttyUSB0 dynamically, which can change across reboots. To avoid this, bind devices using udev rules for persistent naming.
+
+#### Example Symbolic Links
+- `/dev/ttyDXL_leader`
+- `/dev/ttyDXL_follower`
+
+#### Setup Instructions
+Find the current device path (e.g., /dev/ttyUSB0) and get seiral number
+
+```bash
+# Check serial number
+udevadm info --name=/dev/ttyUSB0 --attribute-walk | grep serial
+
+# Create udev rule
+sudo nano /etc/udev/rules.d/99-fixed-dynamixel.rules
+```
+
+Add a line like this:
+```bash
+SUBSYSTEM=="tty", ATTRS{serial}=="<serial_leader>", SYMLINK+="ttyDXL_leader"
+SUBSYSTEM=="tty", ATTRS{serial}=="<serial_follower>", SYMLINK+="ttyDXL_follower"
+```
+
+```bash
+# Apply changes
+sudo udevadm control --reload
+sudo udevadm trigger
+
+# Check created symbolic links
+ls /dev/ttyDXL_*
+```
+
+---
+
+## 💻 Software Installation
+
+### 1. ROS Noetic (Ubuntu 20.04)
+Follow the [official installation guide](https://wiki.ros.org/noetic/Installation/Ubuntu)
+
+### 2. Dynamixel SDK
+
+```bash
 pip3 install -U pip
 pip3 install dynamixel_sdk
+```
 
-## dynamixel serial ID setting
+### 3. Build ROS Package
 
-$ wget https://raw.githubusercontent.com/ROBOTIS-GIT/dynamixel-workbench/master/99-dynamixel-workbench-cdc.rules
-$ sudo cp ./99-dynamixel-workbench-cdc.rules /etc/udev/rules.d/
-$ sudo udevadm control --reload-rules
-$ sudo udevadm trigger
+```bash
+cd ~/catkin_ws/src/
+git clone https://github.com/ogata-lab/dynamixel_teleop.git
+cd ~/catkin_ws
+catkin build
+```
 
+---
 
+## 🚀 Execution (Teleoperation)
 
+Since `interpolation_node` performs linear interpolation based on the control frequency defined in `rosparam`, always start nodes in the following order:
 
-Step 1: Connect 4 robots to the computer via USB, and power on. *Do not use extension cable or usb hub*.
-- To check if the robot is connected, install dynamixel wizard [here](https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_wizard2/)
-- Dynamixel wizard is a very helpful debugging tool that connects to individual motors of the robot. It allows
-things such as rebooting the motor (very useful!), torque on/off, and sending commands.
-However, it has no knowledge about the kinematics of the robot, so be careful about collisions.
-The robot *will* collapse if motors are torque off i.e. there is no automatically engaged brakes in joints.
-- Open Dynamixel wizard, go into ``options`` and select:
-  - Protocal 2.0
-  - All ports
-  - 1000000 bps
-  - ID range from 0-10
-- Note: repeat above everytime before you scan.
-- Then hit ``Scan``. There should be 4 devices showing up, each with 9 motors.
+```bash
+# Leader Arm
+roslaunch leader_controller leader_bringup.launch
 
+# Follower Arm
+roslaunch follower_controller follower_bringup.launch
+```
 
-- One issue that arises is the port each robot binds to can change over time, e.g. a robot that
-is initially ``ttyUSB0`` might suddenly become ``ttyUSB5``. To resolve this, we bind each robot to a fixed symlink
-port with the following mapping:
-  - ``ttyDXL_master_right``: right master robot (master: the robot that the operator would be holding)
-  - ``ttyDXL_puppet_right``: right puppet robot (puppet: the robot that performs the task)
-  - ``ttyDXL_master_left``: left master robot
-  - ``ttyDXL_puppet_left``: left puppet robot
-- Take ``ttyDXL_master_right``: right master robot as an example:
-  1. Find the port that the right master robot is currently binding to, e.g. ``ttyUSB0``
-  2. run ``udevadm info --name=/dev/ttyUSB0 --attribute-walk | grep serial`` to obtain the serial number. Use the first one that shows up, the format should look similar to ``FT6S4DSP``.
-  3. ``sudo vim /etc/udev/rules.d/99-fixed-interbotix-udev.rules`` and add the following line: 
+---
 
-         SUBSYSTEM=="tty", ATTRS{serial}=="<serial number here>", ENV{ID_MM_DEVICE_IGNORE}="1", ATTR{device/latency_timer}="1", SYMLINK+="ttyDXL_master_right"
+## ⏱ Communication Check
 
-  4. This will make sure the right master robot is *always* binding to ``ttyDXL_master_right``
-  5. Repeat with the rest of 3 arms.
-- To apply the changes, run ``sudo udevadm control --reload && sudo udevadm trigger``
-- If successful, you should be able to find ``ttyDXL*`` in your ``/dev``
+Verify that the control frequency is as expected:
 
+```bash
+rostopic hz /leader/joint_states          # ~10 Hz
+rostopic hz /leader/online_joint_states   # ~100 Hz
+rostopic hz /follower/joint_states        # ~100 Hz
+```
 
+---
 
+## 🔧 Customization
 
+### ✅ Modify Configuration File (YAML)
+Control modes (e.g., Position Control, Current-based Position Control) and motor IDs can be configured in YAML:
 
-Find the port that the right master robot is currently binding to, e.g. ttyUSB0
+```yaml
+device: '/dev/ttyDXL_leader'
+baudrate: 4000000
+control_freq: 10
 
-run udevadm info --name=/dev/ttyUSB0 --attribute-walk | grep serial to obtain the serial number. Use the first one that shows up, the format should look similar to FT6S4DSP.
+arm/joint1:
+  id: 11
+  operating_mode: 3  # Position Control
+```
 
-sudo vim /etc/udev/rules.d/99-fixed-interbotix-udev.rules and add the following line:
+### ✅ Switch Launch File
 
-> SUBSYSTEM=="tty", ATTRS{serial}=="<serial number here>", ENV{ID_MM_DEVICE_IGNORE}="1", ATTR{device/latency_timer}="1", SYMLINK+="ttyDXL_master_right"
+To use a new config file such as `follower_new.yaml`, modify the `param_name` argument in `load_config.py`:
 
+```xml
+<launch>
+  <node pkg="robot_description" type="load_config.py"
+        args="--param_name=follower --config=$(find robot_description)/config/follower_new.yaml"/>
+  <node pkg="follower_controller" type="follower_node.py" output="screen"/>
+  <node pkg="follower_controller" type="interpolation_node.py" output="screen"/>
+</launch>
+```
 
+---
 
-# cd ~catkin_ws/src/
-# git clone https://github.com/ROBOTIS-GIT/DynamixelSDK.git
-# cd ../
- catkin build
+## 💡 Application: Online Motion Generation
 
+You can implement online motion generation using deep predictive learning or foundation models.  
+Make sure the inference frequency `freq` matches `interpolation_node`'s `leader_freq`.
 
+```python
+import rospy
+from sensor_msgs.msg import JointState, Image
+from cv_bridge import CvBridge
+import numpy as np
 
+class RTControl:
+    def __init__(self, exptime=10, freq=10):
+        self.rate = rospy.Rate(freq)
+        self.loop = int(freq * exptime)
+        self.bridge = CvBridge()
 
+        rospy.Subscriber("/follower/joint_states", JointState, self.joint_callback)
+        rospy.Subscriber("/camera/color/image_raw", Image, self.image_callback)
+        self.pub = rospy.Publisher("/leader/joint_states", JointState, queue_size=1)
+        self.msg = JointState()
 
+    def joint_callback(self, msg):
+        self.current_position = np.array(msg.position)
 
+    def image_callback(self, msg):
+        self.current_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
 
-ito@X1-Extreme:~$ roslaunch leader_controller leader_bringup.launch 
-... logging to /home/ito/.ros/log/24a58960-53f7-11f0-826d-19bfa58791db/roslaunch-X1-Extreme-26637.log
-Checking log directory for disk usage. This may take a while.
-Press Ctrl-C to interrupt
-Done checking log file disk usage. Usage is <1GB.
+    def run(self):
+        for _ in range(self.loop):
+            pred = model(self.current_position, self.current_image)
+            self.msg.header.stamp = rospy.Time.now()
+            self.msg.position = pred
+            self.pub.publish(self.msg)
+            self.rate.sleep()
+```
 
-started roslaunch server http://X1-Extreme:40721/
-
-SUMMARY
-========
-
-PARAMETERS
- * /rosdistro: noetic
- * /rosversion: 1.16.0
-
-NODES
-  /
-    leader_node (leader_controller/leader_node.py)
-    load_config_node_X1_Extreme_26637_4282705886319671877 (robot_description/load_config.py)
-
-ROS_MASTER_URI=http://localhost:11311
-
-process[load_config_node_X1_Extreme_26637_4282705886319671877-1]: started with pid [26651]
-process[leader_node-2]: started with pid [26652]
-[load_config_node_X1_Extreme_26637_4282705886319671877-1] process has finished cleanly
-log file: /home/ito/.ros/log/24a58960-53f7-11f0-826d-19bfa58791db/load_config_node_X1_Extreme_26637_4282705886319671877-1*.log
-[WARN] [1751098147.543844]: Initialize
-
-
-
-ito@X1-Extreme:~$ roslaunch follower_controller follower_bringup.launch 
-... logging to /home/ito/.ros/log/24a58960-53f7-11f0-826d-19bfa58791db/roslaunch-X1-Extreme-26866.log
-Checking log directory for disk usage. This may take a while.
-Press Ctrl-C to interrupt
-Done checking log file disk usage. Usage is <1GB.
-
-started roslaunch server http://X1-Extreme:41333/
-
-SUMMARY
-========
-
-PARAMETERS
- * /rosdistro: noetic
- * /rosversion: 1.16.0
-
-NODES
-  /
-    follower_node (follower_controller/follower_node.py)
-    interpolation_node (follower_controller/interpolation_node.py)
-    load_config_node_X1_Extreme_26866_4334606723929592779 (robot_description/load_config.py)
-
-ROS_MASTER_URI=http://localhost:11311
-
-process[load_config_node_X1_Extreme_26866_4334606723929592779-1]: started with pid [26880]
-process[follower_node-2]: started with pid [26881]
-process[interpolation_node-3]: started with pid [26882]
-[load_config_node_X1_Extreme_26866_4334606723929592779-1] process has finished cleanly
-log file: /home/ito/.ros/log/24a58960-53f7-11f0-826d-19bfa58791db/load_config_node_X1_Extreme_26866_4334606723929592779-1*.log
-[WARN] [1751098260.878750]: OnlineExecutor.run(): Recieved first data
-[WARN] [1751098261.067711]: Initialize
-[WARN] [1751098261.790308]: OnlineExecutor.run(): Starting execution
-[WARN] [1751098261.791096]: OnlineExecutor.run(): Wait for first target
-
-
-
-
-
-
-
-ito@X1-Extreme:~$ rostopic hz /leader/joint_states 
-subscribed to [/leader/joint_states]
-average rate: 10.000
-        min: 0.100s max: 0.100s std dev: 0.00005s window: 10
-average rate: 10.001
-        min: 0.100s max: 0.100s std dev: 0.00005s window: 20
-average rate: 10.000
-        min: 0.100s max: 0.100s std dev: 0.00005s window: 30
-average rate: 10.000
-        min: 0.100s max: 0.100s std dev: 0.00005s window: 40
-ito@X1-Extreme:~$ rostopic hz /leader/online_joint_states 
-subscribed to [/leader/online_joint_states]
-average rate: 99.991
-        min: 0.010s max: 0.010s std dev: 0.00006s window: 100
-average rate: 100.003
-        min: 0.010s max: 0.010s std dev: 0.00006s window: 200
-average rate: 99.999
-        min: 0.010s max: 0.010s std dev: 0.00006s window: 300
-average rate: 99.999
-        min: 0.010s max: 0.010s std dev: 0.00006s window: 400
-average rate: 99.999
-        min: 0.010s max: 0.010s std dev: 0.00006s window: 500
-ito@X1-Extreme:~$ rostopic hz /follower/joint_states
-subscribed to [/follower/joint_states]
-average rate: 99.966
-        min: 0.010s max: 0.010s std dev: 0.00019s window: 100
-average rate: 99.998
-        min: 0.010s max: 0.010s std dev: 0.00018s window: 200
-average rate: 100.001
-        min: 0.010s max: 0.011s std dev: 0.00017s window: 300
-average rate: 99.998
-        min: 0.009s max: 0.011s std dev: 0.00020s window: 401
-average rate: 100.001
-        min: 0.009s max: 0.011s std dev: 0.00026s window: 501
-
-    

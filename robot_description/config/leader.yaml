@@ -9,7 +9,7 @@
 
 # Communication -----------------------------------
 device: '/dev/ttyDXL_leader'
-baudrate: 3000000
+baudrate: 4000000
 version: 2
 control_freq: 10
 
