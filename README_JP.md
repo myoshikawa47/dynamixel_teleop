@@ -10,7 +10,6 @@
 
 > ⚠️ 本システムはDynamixel **Xシリーズ**でのみ動作確認済みです。Y/Pシリーズでは未検証です。
 
----
 
 ## 🖧 システム概要（System Overview）
 
@@ -32,7 +31,6 @@ PC ⇄ U2D2 ⇄ Leader Arm
   <img src="assets/system_overview.png" width="60%">
 </p>
 
----
 
 ## 🔧 ハードウェア設定
 
@@ -99,8 +97,6 @@ sudo udevadm trigger
 ls /dev/ttyDXL_*
 ```
 
----
-
 ## 💻 ソフトウェアインストール
 
 ### ① ROS Noetic（Ubuntu 20.04）
@@ -122,8 +118,6 @@ cd ~/catkin_ws
 catkin build
 ```
 
----
-
 ## 🚀 実行方法（テレオペレーション）
 
 `interpolation_node`がリーダーアームの出力値を補間し、フォロワーに伝播します。
@@ -136,19 +130,14 @@ roslaunch leader_controller leader_bringup.launch
 roslaunch follower_controller follower_bringup.launch
 ```
 
----
-
-## ⏱ 通信確認コマンド
+## 🛠 TIPS
+### ⏱ 通信確認コマンド
 
 ```bash
 rostopic hz /leader/joint_states          # 10 Hz 程度
 rostopic hz /leader/online_joint_states   # 100 Hz 程度
 rostopic hz /follower/joint_states        # 100 Hz 程度
 ```
-
----
-
-## 🛠 カスタマイズ方法
 
 ### ✅ 設定ファイルの編集（例：YAML）
 
@@ -189,8 +178,6 @@ roslaunch follower_controller follower_bringup.launch follower_freq:=200
 ```bash
 roslaunch follower_controller follower_bringup.launch leader_freq:=5
 ```
-
----
 
 ## 💡 応用：オンライン動作生成
 
