@@ -1,11 +1,14 @@
+
 # 🦾 Dynamixel Teleoperation System
 
-このリポジトリは、**Dynamixelモータを用いたテレオペレーションシステム**を提供します。PythonおよびROSで構築されており、次のような特徴を持ちます：
+このリポジトリは、**Dynamixelモータを用いたテレオペレーションシステム**を提供します。PythonおよびROSを基盤とし、以下の特徴を持ちます：
 
-- `GroupSyncRead` / `GroupSyncWrite` による高速な通信処理
-- OpenManipulatorとの即時互換（モータIDと通信速度設定のみで使用可能）
-- 線形補間による滑らかな追従制御
-- 柔軟な設定変更：YAMLファイルでモータ構成や制御モードを切り替え可能
+- `GroupSyncRead` / `GroupSyncWrite` による高速な通信処理  
+- OpenManipulatorとの即時互換（モータIDと通信速度の設定のみで動作可能）  
+- 線形補間による滑らかな追従制御  
+- YAMLファイルによる柔軟な設定切り替え（モータ構成・制御モードなど）
+
+> ⚠️ 本システムはDynamixel **Xシリーズ**でのみ動作確認済みです。Y/Pシリーズでは未検証です。
 
 ---
 
@@ -19,11 +22,11 @@ PC ⇄ U2D2 ⇄ Leader Arm
 
 ### 📡 ROS通信トピック
 
-| ノード名       | 購読トピック                 | 配信トピック                   |
-|----------------|------------------------------|--------------------------------|
-| `leader_node`  | -                            | `/leader/joint_state`          |
-| `interpolation_node` | `/leader/joint_state`        | `/leader/online_joint_state`   |
-| `follower_node`| `/leader/online_joint_state` | `/follower/joint_state`        |
+| ノード名              | 購読トピック                 | 配信トピック                   |
+|-----------------------|------------------------------|--------------------------------|
+| `leader_node`         | -                            | `/leader/joint_state`          |
+| `interpolation_node`  | `/leader/joint_state`        | `/leader/online_joint_state`   |
+| `follower_node`       | `/leader/online_joint_state` | `/follower/joint_state`        |
 
 <p align="center">
   <img src="assets/system_overview.png" width="60%">
@@ -36,16 +39,16 @@ PC ⇄ U2D2 ⇄ Leader Arm
 ### 🧰 ドライバ & 権限設定
 
 ```bash
-# Dynamixel Wizardインストール
+# Dynamixel Wizard のインストール
 cd ~/Downloads/
 wget -O DynamixelWizard2Setup_x64 "https://www.dropbox.com/s/csawv9qzl8m8e0d/DynamixelWizard2Setup-x86_64?dl=1"
 chmod +x DynamixelWizard2Setup_x64
 ./DynamixelWizard2Setup_x64
 
-# USBアクセス許可
+# USBアクセス権限の付与
 sudo usermod -aG dialout "$USER"
 
-# udevルール設定
+# udevルールの設定
 wget https://raw.githubusercontent.com/ROBOTIS-GIT/dynamixel-workbench/master/99-dynamixel-workbench-cdc.rules
 sudo mv 99-dynamixel-workbench-cdc.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules
@@ -65,25 +68,23 @@ sudo udevadm trigger
 | arm/joint5   | 15        | 25          |
 
 ### 🔌 udevによるデバイス名固定
-Linuxでは、USBデバイスに `/dev/ttyUSB0` のような名前が動的に割り当てられるが、これは再起動などによって変わる可能性がある。
-これを防ぐために、`udev` ルールを使ってデバイスに固定の名前を割り当てる。
 
-#### シンボリックリンクの例
+Linuxでは、USBデバイスに `/dev/ttyUSB0` などの名前が再起動ごとに変わる可能性があります。これを防ぐため、`udev`ルールを用いて**固定名のシンボリックリンク**を設定します。
+
+#### シンボリックリンク例：
 - `/dev/ttyDXL_leader`
 - `/dev/ttyDXL_follower`
 
-#### 設定手順
-現在のデバイスパス（例：/dev/ttyUSB0）を取得し、シリアル番号を取得
+#### 設定手順：
 
 ```bash
-# シリアル番号を確認
+# シリアル番号の確認
 udevadm info --name=/dev/ttyUSB0 --attribute-walk | grep serial
 
 # udevルール作成
 sudo nano /etc/udev/rules.d/99-fixed-dynamixel.rules
 ```
 
-次のような行を追加
 ```bash
 SUBSYSTEM=="tty", ATTRS{serial}=="<serial_leader>", SYMLINK+="ttyDXL_leader"
 SUBSYSTEM=="tty", ATTRS{serial}=="<serial_follower>", SYMLINK+="ttyDXL_follower"
@@ -103,7 +104,7 @@ ls /dev/ttyDXL_*
 ## 💻 ソフトウェアインストール
 
 ### ① ROS Noetic（Ubuntu 20.04）
-[公式インストールガイド](https://wiki.ros.org/noetic/Installation/Ubuntu) に従ってセットアップ
+[公式インストールガイド](https://wiki.ros.org/noetic/Installation/Ubuntu)に従ってインストールしてください。
 
 ### ② Dynamixel SDK
 
@@ -125,20 +126,19 @@ catkin build
 
 ## 🚀 実行方法（テレオペレーション）
 
-`rosparam`に登録された制御周期に基づいて`interpolation_node`が線形補間を行うため、必ずリーダアーム、フォロワアームの順に実行すること
+`interpolation_node`がリーダーアームの出力値を補間し、フォロワーに伝播します。
 
 ```bash
-# Leader アーム
+# Leader アームの起動
 roslaunch leader_controller leader_bringup.launch
 
-# Follower アーム
+# Follower アームの起動
 roslaunch follower_controller follower_bringup.launch
 ```
 
 ---
 
 ## ⏱ 通信確認コマンド
-制御周期が設定通りであるか確認
 
 ```bash
 rostopic hz /leader/joint_states          # 10 Hz 程度
@@ -148,10 +148,11 @@ rostopic hz /follower/joint_states        # 100 Hz 程度
 
 ---
 
-## 🔧 カスタマイズ方法
+## 🛠 カスタマイズ方法
 
 ### ✅ 設定ファイルの編集（例：YAML）
-制御方式（例：Position Control, Current-based Pos. Controlなど）やモータIDは`yaml`ファイルで設定
+
+例：
 
 ```yaml
 device: '/dev/ttyDXL_leader'
@@ -163,8 +164,7 @@ arm/joint1:
   operating_mode: 3  # Position Control
 ```
 
-### ✅ Launchファイル切替
-新しい設定ファイル `follower_new.yaml` を使用する場合、`load_config.py`の引数`param_name`を変更
+新しい設定ファイル `follower_new.yaml` を使用する場合は、`launch`ファイルの `param_name` を必ず変更してください。
 
 ```xml
 <launch>
@@ -175,11 +175,26 @@ arm/joint1:
 </launch>
 ```
 
+### ✅ 制御周期の変更
+
+例えば、`follower.yaml`の制御周期を100→200Hzに変更した場合、以下のようにlaunchファイルに引数指定することで `interpolation_node` の制御周期も変更する必要があります。
+
+```bash
+roslaunch follower_controller follower_bringup.launch follower_freq:=200
+```
+
+同様に、リーダーアームの制御周期も以下のように変更可能です。
+> ⚠️ 基盤モデルなどを用いて5Hzで動作生成した際も `leader_freq` を変更することを忘れずに。
+
+```bash
+roslaunch follower_controller follower_bringup.launch leader_freq:=5
+```
+
 ---
 
 ## 💡 応用：オンライン動作生成
-深層予測学習や基盤モデルを用いてオンライン動作生成する場合、以下のように実装できます。
-なお、モデルの推論周期 `freq` とinterpolation_nodeの `leader_freq` を一致させることを忘れないでください。
+
+基盤モデルや予測モデルを用いたリアルタイム制御の例：
 
 ```python
 import rospy

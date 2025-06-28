@@ -7,6 +7,8 @@ This repository provides a **teleoperation system using Dynamixel motors**, buil
 - Smooth tracking with linear interpolation
 - Flexible configuration via YAML files for motor setup and control modes
 
+> ⚠️ This system has been verified only with Dynamixel **X-series** motors. Y/P-series are untested.
+
 ---
 
 ## 🖧 System Overview
@@ -150,7 +152,7 @@ rostopic hz /follower/joint_states        # ~100 Hz
 
 ## 🔧 Customization
 
-### ✅ Modify Configuration File (YAML)
+### ✅ Edit Configuration Files (e.g. YAML)
 Control modes (e.g., Position Control, Current-based Position Control) and motor IDs can be configured in YAML:
 
 ```yaml
@@ -163,9 +165,7 @@ arm/joint1:
   operating_mode: 3  # Position Control
 ```
 
-### ✅ Switch Launch File
-
-To use a new config file such as `follower_new.yaml`, modify the `param_name` argument in `load_config.py`:
+When using a new configuration file like `follower_new.yaml`, be sure to update the `param_name` in the launch file:
 
 ```xml
 <launch>
@@ -175,6 +175,22 @@ To use a new config file such as `follower_new.yaml`, modify the `param_name` ar
   <node pkg="follower_controller" type="interpolation_node.py" output="screen"/>
 </launch>
 ```
+
+### ✅ Change Control Frequency
+If you change the control frequency from 100Hz to 200Hz in follower.yaml, make sure to update the interpolation_node frequency via launch arguments:
+
+```bash
+roslaunch follower_controller follower_bringup.launch follower_freq:=200
+```
+
+Likewise, you can change the leader's frequency as well:
+>⚠️ Don’t forget to update leader_freq if you're generating motion at 5Hz using a foundation model.
+
+
+```bash
+roslaunch follower_controller follower_bringup.launch leader_freq:=5
+```
+
 
 ---
 
