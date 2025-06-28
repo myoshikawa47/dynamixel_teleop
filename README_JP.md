@@ -65,13 +65,14 @@ sudo udevadm trigger
 | arm/joint5   | 15        | 25          |
 
 ### 🔌 udevによるデバイス名固定
-現在のデバイスパス（例：/dev/ttyUSB0）を取得し、シリアル番号を取得
+Linuxでは、USBデバイスに `/dev/ttyUSB0` のような名前が動的に割り当てられますが、これは再起動などによって変わる可能性があります。これを防ぐために、`udev` ルールを使ってデバイスに固定の名前を割り当てることができます。
 
 #### シンボリックリンクの例
 - `/dev/ttyDXL_leader`
 - `/dev/ttyDXL_follower`
 
 #### 設定手順
+現在のデバイスパス（例：/dev/ttyUSB0）を取得し、シリアル番号を取得
 
 ```bash
 # シリアル番号を確認
@@ -81,7 +82,7 @@ udevadm info --name=/dev/ttyUSB0 --attribute-walk | grep serial
 sudo nano /etc/udev/rules.d/99-fixed-dynamixel.rules
 ```
 
-次のような行を追加：
+次のような行を追加
 ```bash
 SUBSYSTEM=="tty", ATTRS{serial}=="<serial_leader>", SYMLINK+="ttyDXL_leader"
 SUBSYSTEM=="tty", ATTRS{serial}=="<serial_follower>", SYMLINK+="ttyDXL_follower"
