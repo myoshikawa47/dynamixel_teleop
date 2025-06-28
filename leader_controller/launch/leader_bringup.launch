@@ -1,0 +1,7 @@
+<launch>
+
+  <node name="$(anon load_config_node)" pkg="robot_description" type="load_config.py"
+      args="--param_name=leader --config=$(find robot_description)/config/leader.yaml"/>
+  <node name="leader_node" pkg="leader_controller" type="leader_node.py" output="screen"/>
+
+</launch>

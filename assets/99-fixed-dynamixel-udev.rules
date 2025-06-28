@@ -1,0 +1,7 @@
+# udevadm info --name=/dev/ttyUSB0 --attribute-walk | grep serial
+# sudo cp ./99-fixed-dynamixel-udev.rules /etc/udev/rules.d/
+# sudo udevadm control --reload-rules
+# sudo udevadm trigger
+
+SUBSYSTEM=="tty", ATTRS{serial}=="<serial number here>", ENV{ID_MM_DEVICE_IGNORE}="1", ATTR{device/latency_timer}="1", SYMLINK+="ttyDXL_leader"
+SUBSYSTEM=="tty", ATTRS{serial}=="<serial number here>", ENV{ID_MM_DEVICE_IGNORE}="1", ATTR{device/latency_timer}="1", SYMLINK+="ttyDXL_follower"

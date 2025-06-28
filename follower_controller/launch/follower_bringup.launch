@@ -1,0 +1,8 @@
+<launch>
+
+  <node name="$(anon load_config_node)" pkg="robot_description" type="load_config.py"
+      args="--param_name=follower --config=$(find robot_description)/config/follower.yaml"/>
+  <node name="follower_node" pkg="follower_controller" type="follower_node.py" output="screen"/>
+  <node name="interpolation_node" pkg="follower_controller" type="interpolation_node.py" output="screen"/>
+
+</launch>
