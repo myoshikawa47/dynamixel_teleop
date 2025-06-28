@@ -135,11 +135,11 @@ roslaunch leader_controller leader_bringup.launch
 # Follower Arm
 roslaunch follower_controller follower_bringup.launch
 ```
-
 ---
 
-## ⏱ Communication Check
+## 🔧 TIPS
 
+### ⏱ Communication Check
 Verify that the control frequency is as expected:
 
 ```bash
@@ -147,10 +147,6 @@ rostopic hz /leader/joint_states          # ~10 Hz
 rostopic hz /leader/online_joint_states   # ~100 Hz
 rostopic hz /follower/joint_states        # ~100 Hz
 ```
-
----
-
-## 🔧 Customization
 
 ### ✅ Edit Configuration Files (e.g. YAML)
 Control modes (e.g., Position Control, Current-based Position Control) and motor IDs can be configured in YAML:
