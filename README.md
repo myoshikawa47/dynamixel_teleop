@@ -131,7 +131,6 @@ roslaunch leader_controller leader_bringup.launch
 # Follower Arm
 roslaunch follower_controller follower_bringup.launch
 ```
----
 
 ## 🔧 TIPS
 
