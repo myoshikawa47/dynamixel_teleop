@@ -120,21 +120,17 @@ def main(follower_freq, leader_freq):
     executor.run()
 
 
+def parse_arguments(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--follower_freq", type=int, default=100)
+    parser.add_argument("--leader_freq", type=int, default=10)
+    return parser.parse_args(args)
+
+
 if __name__ == "__main__":
     try:
         rospy.init_node("interpolator_node", anonymous=True)
-
-        # デフォルト値を用意（必要に応じて変更してください）
-        default_follower_param = {"control_freq": 100.0}
-        default_leader_param = {"control_freq": 10.0}
-
-        follower_param = rospy.get_param("/follower", default_follower_param)
-        follower_freq = follower_param["control_freq"]
-
-        leader_param = rospy.get_param("/leader", default_leader_param)
-        leader_freq = leader_param["control_freq"]
-
-        main(follower_freq, leader_freq)
-
+        args = parse_arguments(rospy.myargv()[1:])
+        main(args.follower_freq, args.leader_freq)
     except rospy.ROSInterruptException:
         pass
