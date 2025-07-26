@@ -33,7 +33,9 @@ class DynamixelCore:
         reset a dynamixel to their default values
         :param dxl_id: the id of the dynamixel
         """
-        dxl_result, dxl_error = self.packet_handler.factoryReset(self.port_handler, dxl_id)
+        dxl_result, dxl_error = self.packet_handler.factoryReset(
+            self.port_handler, dxl_id
+        )
         self._validate(dxl_result, dxl_error)
 
     def get_torque(self, dxl_id):
@@ -213,7 +215,9 @@ class DynamixelCore:
         :param dxl_id: the id of the dynamixel
         :return: the present input voltage
         """
-        dxl_input_voltage = self._get_medium_register(dxl_id, ADDR_PRESENT_INPUT_VOLTAGE)
+        dxl_input_voltage = self._get_medium_register(
+            dxl_id, ADDR_PRESENT_INPUT_VOLTAGE
+        )
         return dxl_input_voltage
 
     def get_present_velocity(self, dxl_id):
@@ -442,7 +446,9 @@ class DynamixelCore:
         :param address: dynamixel register address
         :param value: the value to set
         """
-        dxl_result, dxl_error = self.packet_handler.write1ByteTxRx(self.port_handler, dxl_id, address, value)
+        dxl_result, dxl_error = self.packet_handler.write1ByteTxRx(
+            self.port_handler, dxl_id, address, value
+        )
         self._validate(dxl_result, dxl_error)
         time.sleep(0.01)
 
@@ -453,7 +459,9 @@ class DynamixelCore:
         :param address: dynamixel register address
         :param value: the value to set
         """
-        dxl_result, dxl_error = self.packet_handler.write2ByteTxRx(self.port_handler, dxl_id, address, value)
+        dxl_result, dxl_error = self.packet_handler.write2ByteTxRx(
+            self.port_handler, dxl_id, address, value
+        )
         self._validate(dxl_result, dxl_error)
         time.sleep(0.01)
 
@@ -464,7 +472,9 @@ class DynamixelCore:
         :param address: dynamixel register address
         :param value: the value to set
         """
-        dxl_result, dxl_error = self.packet_handler.write4ByteTxRx(self.port_handler, dxl_id, address, value)
+        dxl_result, dxl_error = self.packet_handler.write4ByteTxRx(
+            self.port_handler, dxl_id, address, value
+        )
         self._validate(dxl_result, dxl_error)
         time.sleep(0.01)
 
@@ -475,7 +485,9 @@ class DynamixelCore:
         :param address: dynamixel register address
         :return: the register entry
         """
-        dxl_data, dxl_result, dxl_error = self.packet_handler.read1ByteTxRx(self.port_handler, dxl_id, address)
+        dxl_data, dxl_result, dxl_error = self.packet_handler.read1ByteTxRx(
+            self.port_handler, dxl_id, address
+        )
         self._validate(dxl_result, dxl_error)
         return dxl_data
 
@@ -486,7 +498,9 @@ class DynamixelCore:
         :param address: dynamixel register address
         :return: the register entry
         """
-        dxl_data, dxl_result, dxl_error = self.packet_handler.read2ByteTxRx(self.port_handler, dxl_id, address)
+        dxl_data, dxl_result, dxl_error = self.packet_handler.read2ByteTxRx(
+            self.port_handler, dxl_id, address
+        )
         self._validate(dxl_result, dxl_error)
         return dxl_data
 
@@ -497,7 +511,9 @@ class DynamixelCore:
         :param address: dynamixel register address
         :return: the register entry
         """
-        dxl_data, dxl_result, dxl_error = self.packet_handler.read4ByteTxRx(self.port_handler, dxl_id, address)
+        dxl_data, dxl_result, dxl_error = self.packet_handler.read4ByteTxRx(
+            self.port_handler, dxl_id, address
+        )
         self._validate(dxl_result, dxl_error)
         return dxl_data
 

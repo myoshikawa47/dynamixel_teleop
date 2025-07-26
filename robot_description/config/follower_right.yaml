@@ -1,0 +1,75 @@
+# set the operating mode of the dynamixel
+# list of control modes:
+#   Current Control Mode            = 0
+#   Velocity Control Mode           = 1
+#   Position Control Mode           = 3
+#   Extended Pos. Control Mode      = 4
+#   Current-Base Pos. Control Mode  = 5
+#   PWM Control Mode                = 16
+# puppet_sleep_position = (0, -1.7, 1.55, 0.12, 0.65, 0)
+# puppet_sleep_position = [2047,  939, 3057, 2125, 2471, 2047]
+
+
+# Communication -----------------------------------
+device: '/dev/ttyDXL_puppet_right'
+baudrate: 4000000
+version: 2
+control_freq: 500
+
+# Parameters ---------------------------------------
+arm/joint1:
+  id: 1
+  min_position: 0
+  max_position: 4095
+  home_position: 2047
+  current_limit: 100
+  operating_mode: 3
+
+arm/joint2:
+  id: 2
+  min_position: 819
+  max_position: 3345
+  home_position: 939
+  current_limit: 100
+  operating_mode: 3
+
+arm/joint3:
+  id: 4
+  min_position: 648
+  max_position: 3094
+  home_position: 3057
+  current_limit: 100
+  operating_mode: 3
+
+arm/joint4:
+  id: 6
+  min_position: 0
+  max_position: 4095
+  home_position: 2125
+  current_limit: 100
+  operating_mode: 3
+
+arm/joint5:
+  id: 7
+  min_position: 910
+  max_position: 3447
+  home_position: 2047
+  current_limit: 100
+  operating_mode: 3
+
+arm/joint6:
+  id: 8
+  min_position: 0
+  max_position: 4095
+  home_position: 2047
+  current_limit: 100
+  operating_mode: 3
+
+arm/joint7:
+  id: 9
+  min_position: 0
+  max_position: 4095
+  home_position: 2047
+  current_limit: 120
+  operating_mode: 5
+  homing_offset: 407

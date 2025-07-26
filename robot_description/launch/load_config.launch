@@ -2,9 +2,9 @@
 
   <!-- load dynamixel_config -->
   <node name="follower_config_node" pkg="robot_description" type="load_config.py"
-      args="--param_name=follower --config=$(find robot_description)/config/follower.yaml"/>
+      args="--param_name=follower --config=$(find robot_description)/config/follower_left.yaml"/>
 
   <node name="leader_config_node" pkg="robot_description" type="load_config.py"
-      args="--param_name=leader --config=$(find robot_description)/config/leader.yaml"/>
+      args="--param_name=leader --config=$(find robot_description)/config/leader_left.yaml"/>
 
 </launch>

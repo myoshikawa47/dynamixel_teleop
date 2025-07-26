@@ -2,14 +2,6 @@
  <arg name="follower_freq" default="500" />
  <arg name="leader_freq" default="100" />
 
-  <group ns="left_arm">
-    <node name="$(anon load_config_node)" pkg="robot_description" type="load_config.py"
-        args="--param_name=follower --config=$(find robot_description)/config/follower_left.yaml"/>
-    <node name="follower_node" pkg="follower_controller" type="follower_node.py" output="screen"/>
-    <node name="interpolation_node" pkg="follower_controller" type="interpolation_node.py" output="screen"
-        args="--follower_freq=$(arg follower_freq) --leader_freq=$(arg leader_freq)"/>
-  </group>
-
   <group ns="right_arm">
     <node name="$(anon load_config_node)" pkg="robot_description" type="load_config.py"
         args="--param_name=follower --config=$(find robot_description)/config/follower_right.yaml"/>
@@ -17,6 +9,5 @@
     <node name="interpolation_node" pkg="follower_controller" type="interpolation_node.py" output="screen"
         args="--follower_freq=$(arg follower_freq) --leader_freq=$(arg leader_freq)"/>
   </group>
-
-
+  
 </launch>

@@ -10,9 +10,16 @@ import rospy
 from sensor_msgs.msg import JointState
 
 
+def normalization(data, indataRange, outdataRange):
+    data = (data - indataRange[0]) / (indataRange[1] - indataRange[0])
+    data = data * (outdataRange[1] - outdataRange[0]) + outdataRange[0]
+    return data
+
+
 class LeaderContrller(DynamixelCore):
     def __init__(self):
-        self.param = rospy.get_param("/leader")
+        self.ns = rospy.get_namespace()
+        self.param = rospy.get_param(self.ns + "leader")
         self.baudrate = self.param["baudrate"]
         self.freq = self.param["control_freq"]
         self.r = rospy.Rate(self.param["control_freq"])
@@ -21,11 +28,17 @@ class LeaderContrller(DynamixelCore):
         # Initialize PortHandler/PacketHandler Structs
         self.port_handler = PortHandler(self.param["device"])
         self.packet_handler = PacketHandler(self.param["version"])
-        self.readh = GroupSyncRead(self.port_handler, self.packet_handler, ADDR_PRESENT_POSITION, 4)
-        self.write_position = GroupSyncWrite(self.port_handler, self.packet_handler, ADDR_GOAL_POSITION, 4)
+        self.readh = GroupSyncRead(
+            self.port_handler, self.packet_handler, ADDR_PRESENT_POSITION, 4
+        )
+        self.write_position = GroupSyncWrite(
+            self.port_handler, self.packet_handler, ADDR_GOAL_POSITION, 4
+        )
 
         # publisher and subscriber
-        self.joint_pub = rospy.Publisher("/leader/joint_states", JointState, queue_size=1)
+        self.joint_pub = rospy.Publisher(
+            self.ns + "leader/joint_states", JointState, queue_size=1
+        )
         self.joint_msg = JointState()
 
         # Setup
@@ -44,7 +57,9 @@ class LeaderContrller(DynamixelCore):
                 self.set_torque(id, False)
                 self.joint_name.append(p)
                 self.joint_id.append(id)
-                self.joint_minmax.append([self.param[p]["min_position"], self.param[p]["max_position"]])
+                self.joint_minmax.append(
+                    [self.param[p]["min_position"], self.param[p]["max_position"]]
+                )
                 self.home_position.append(self.param[p]["home_position"])
                 self.set_operating_mode(id, self.param[p]["operating_mode"])
                 self.set_current_limit(id, self.param[p]["current_limit"])
@@ -77,6 +92,10 @@ class LeaderContrller(DynamixelCore):
         if retp == 0:
             for i, id in enumerate(self.joint_id):
                 _current_position = self.readh.getData(id, 132, 4)
+                if id == 9:
+                    _current_position = normalization(
+                        _current_position, (2048, 2660), (2048, 3500)
+                    )
                 self.current_position[i] = np.int32(_current_position)
 
         return retp, self.current_position
@@ -87,7 +106,6 @@ class LeaderContrller(DynamixelCore):
         self.joint_msg.position = np.array(self.current_position, dtype=np.int32)
         self.joint_pub.publish(self.joint_msg)
 
-
     def move_to_goal_pose(self, goal_pose, exptime, freq=100):
         # initialize
         retp, _ = self.get_joint_states()
@@ -96,12 +114,16 @@ class LeaderContrller(DynamixelCore):
             exit()
 
         nloop = exptime * freq
-        initialize_trajectory = np.linspace(self.current_position, goal_pose, nloop, dtype=np.int32)
+        initialize_trajectory = np.linspace(
+            self.current_position, goal_pose, nloop, dtype=np.int32
+        )
         rospy.logwarn("Initialize")
 
         for loop_ct in range(nloop):
             for n, id in enumerate(self.joint_id):
-                param_goal_position = self._sync_value(initialize_trajectory[loop_ct, n])
+                param_goal_position = self._sync_value(
+                    initialize_trajectory[loop_ct, n]
+                )
 
                 retp = self.write_position.addParam(id, param_goal_position)
                 if retp != True:
@@ -113,7 +135,7 @@ class LeaderContrller(DynamixelCore):
             self._validate(retp, 0)
             self.write_position.clearParam()
             time.sleep(1.0 / freq)
-        
+
         self.torque_off()
 
     def run(self):

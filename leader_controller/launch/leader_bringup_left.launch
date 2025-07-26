@@ -5,11 +5,5 @@
         args="--param_name=leader --config=$(find robot_description)/config/leader_left.yaml"/>
     <node name="leader_node" pkg="leader_controller" type="leader_node.py" output="screen"/>
   </group>
-
-  <group ns="right_arm">
-    <node name="$(anon load_config_node)" pkg="robot_description" type="load_config.py"
-        args="--param_name=leader --config=$(find robot_description)/config/leader_right.yaml"/>
-    <node name="leader_node" pkg="leader_controller" type="leader_node.py" output="screen"/>
-  </group>
-
+  
 </launch>

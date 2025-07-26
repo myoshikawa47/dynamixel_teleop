@@ -14,8 +14,11 @@ def linear_interpolation(q0, q1, T, t):
 
 
 class Interpolator:
-    def __init__(self, follower_freq=100, leader_freq=10, max_target_jump=20.0 / 180.0 * np.pi):
+    def __init__(
+        self, follower_freq=100, leader_freq=10, max_target_jump=20.0 / 180.0 * np.pi
+    ):
 
+        self.ns = rospy.get_namespace()
         self.control_period = 1.0 / follower_freq
         self.target_period = 1.0 / leader_freq
         self.max_target_jump = max_target_jump
@@ -31,10 +34,14 @@ class Interpolator:
         self.prev_target = None
 
         # low freq target input from network
-        self.target_sub = rospy.Subscriber("/leader/joint_states", JointState, self.target_callback)
+        self.target_sub = rospy.Subscriber(
+            self.ns + "leader/joint_states", JointState, self.target_callback
+        )
 
         # setup the online effort controller client
-        self.cmd_pub = rospy.Publisher("/leader/online_joint_states", JointState, queue_size=1)
+        self.cmd_pub = rospy.Publisher(
+            self.ns + "leader/online_joint_states", JointState, queue_size=1
+        )
 
         while self.cmd_pub.get_num_connections() == 0:
             rospy.sleep(1)
@@ -51,19 +58,25 @@ class Interpolator:
 
             if not self.has_valid_target:
                 # just keep the current state
-                rospy.logwarn_throttle(1.0, "OnlineExecutor.run(): Wait for first target")
+                rospy.logwarn_throttle(
+                    1.0, "OnlineExecutor.run(): Wait for first target"
+                )
 
             if self.has_valid_target:
                 # interpolation between prev_target and next target
                 t = (rospy.Time.now() - self.target_update_time).to_sec()
 
-                _cmd = linear_interpolation(self.prev_target, self.target, self.target_period, t)
+                _cmd = linear_interpolation(
+                    self.prev_target, self.target, self.target_period, t
+                )
                 self.cmd = _cmd.astype(np.int32)
 
                 # check if communicaton is broken
                 if t > self.max_target_delay:
                     self.has_valid_target = False
-                    rospy.logwarn("OnlineExecutor.run(): Interpolation stopped, wait for valid command")
+                    rospy.logwarn(
+                        "OnlineExecutor.run(): Interpolation stopped, wait for valid command"
+                    )
 
                 # send the target to robot
                 self.command(self.cmd)
@@ -116,7 +129,9 @@ class Interpolator:
 
 
 def main(follower_freq, leader_freq):
-    executor = Interpolator(follower_freq=follower_freq, leader_freq=leader_freq, max_target_jump=512)
+    executor = Interpolator(
+        follower_freq=follower_freq, leader_freq=leader_freq, max_target_jump=1024
+    )
     executor.run()
 
 

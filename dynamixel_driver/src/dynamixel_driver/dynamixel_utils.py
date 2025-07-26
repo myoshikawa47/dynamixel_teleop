@@ -127,7 +127,11 @@ def convertVelocity2Value(velocity):
     rpm = 0.229
     RPM2RADPERSEC = 0.104719755
 
-    value = np.where(velocity >= 0, velocity / (rpm * RPM2RADPERSEC), velocity / (rpm * RPM2RADPERSEC) + 0xFFFFFFFF)
+    value = np.where(
+        velocity >= 0,
+        velocity / (rpm * RPM2RADPERSEC),
+        velocity / (rpm * RPM2RADPERSEC) + 0xFFFFFFFF,
+    )
     return np.round(value).astype(int)
 
 
@@ -135,7 +139,11 @@ def convertValue2Velocity(value):
     rpm = 0.229
     RPM2RADPERSEC = 0.104719755
 
-    velocity = np.where(value < int(0xFFFFFFFF / 2), value * rpm * RPM2RADPERSEC, (value - 0xFFFFFFFF) * rpm * RPM2RADPERSEC)
+    velocity = np.where(
+        value < int(0xFFFFFFFF / 2),
+        value * rpm * RPM2RADPERSEC,
+        (value - 0xFFFFFFFF) * rpm * RPM2RADPERSEC,
+    )
     return velocity
 
 
